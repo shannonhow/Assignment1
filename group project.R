@@ -23,6 +23,14 @@ retail_data$Time <- format(as.POSIXct(retail_data$InvoiceDate,format="%d/%m/%Y %
 retail_data$Date <- format(as.POSIXct(retail_data$InvoiceDate,format="%d/%m/%Y %H:%M"),"%Y-%m-%d")
 retail_data$InvoiceDate <- NULL
 
+#(for this part i did this instead cause the above didnt work for me)
+#invoicedate <- as.character(retail_data$InvoiceDate)
+ 
+#retail_data$Time <- format(as.POSIXct(invoicedate,format="%d/%m/%Y %H:%M"),"%H:%M")
+#retail_data$Date <- format(as.POSIXct(invoicedate,format="%d/%m/%Y %H:%M"),"%Y-%m-%d")
+#retail_data$InvoiceDate <- NULL
+
+
 #Creating a TotalSpent column
 retail_data$TotalSpent = retail_data$Quantity * retail_data$UnitPrice
 
