@@ -18,9 +18,13 @@ length(unique(retail_data$CustomerID)) #4373 unique customer IDs
 #                                   #
 #####################################
 
+#Convert Invoice date to character class first 
+
+invoicedate <- as.character(retail_data$InvoiceDate)
+
 #Creating a Date & Time column 
-retail_data$Time <- format(as.POSIXct(retail_data$InvoiceDate,format="%d/%m/%Y %H:%M"),"%H:%M")
-retail_data$Date <- format(as.POSIXct(retail_data$InvoiceDate,format="%d/%m/%Y %H:%M"),"%Y-%m-%d")
+retail_data$Time <- format(as.POSIXct(invoicedate,format="%d/%m/%Y %H:%M"),"%H:%M")
+retail_data$Date <- format(as.POSIXct(invoicedate,format="%d/%m/%Y %H:%M"),"%Y-%m-%d")
 retail_data$InvoiceDate <- NULL
 
 #Creating a TotalSpent column
@@ -100,3 +104,30 @@ customers$amount <- map_quantiles(customer_retail_data$total_amount)
 #The RFM score is then a concatenation of the above three scores. Here is its calculation:
 customers$rfm <- (customers$recency*100 + customers$frequency*10 + customers$amount)
 head(customers)
+
+
+#total spent for each invoice
+
+t <- group_by(new_retail_data, InvoiceNo, Date, CustomerID ) %>% summarize(TotalSum = sum(TotalSpent))
+
+
+#getting the rfm
+#getting the m first 
+m <- quantcut(t$TotalSum, 5)
+levelm <- levels(m)
+mapvalues(m,  from = levelm, to = c(1,2,3,4,5))
+
+#getting the f
+t$CustomerID <- as.factor(t$CustomerID)
+detach("package:plyr", unload=TRUE) 
+library(dplyr)
+temp <- group_by(t, CustomerID) %>% summarize(count = n())
+
+library(plyr)
+f <- quantcut(temp$count, 5)
+levelf <- levels(f)
+mapvalues(f,  from = levelf, to = c(1,2,3,4,5))
+
+
+
+
