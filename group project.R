@@ -18,9 +18,12 @@ length(unique(retail_data$CustomerID)) #4373 unique customer IDs
 #                                   #
 #####################################
 
+#Convert Invoice date to character class first 
+invoicedate <- as.character(retail_data$InvoiceDate)
+
 #Creating a Date & Time column 
-retail_data$Time <- format(as.POSIXct(retail_data$InvoiceDate,format="%d/%m/%Y %H:%M"),"%H:%M")
-retail_data$Date <- format(as.POSIXct(retail_data$InvoiceDate,format="%d/%m/%Y %H:%M"),"%Y-%m-%d")
+retail_data$Time <- format(as.POSIXct(invoicedate,format="%d/%m/%Y %H:%M"),"%H:%M")
+retail_data$Date <- format(as.POSIXct(invoicedate,format="%d/%m/%Y %H:%M"),"%Y-%m-%d")
 retail_data$InvoiceDate <- NULL
 
 #Creating a TotalSpent column
@@ -100,3 +103,73 @@ customers$amount <- map_quantiles(customer_retail_data$total_amount)
 #The RFM score is then a concatenation of the above three scores. Here is its calculation:
 customers$rfm <- (customers$recency*100 + customers$frequency*10 + customers$amount)
 head(customers)
+
+
+
+library(dplyr)
+library(gtools)
+
+
+
+
+#total spent for each invoice
+
+t <- group_by(new_retail_data, InvoiceNo, Date, CustomerID ) %>% summarise(TotalSum = sum(TotalSpent))
+t<- t[order(t$CustomerID),]
+
+#getting the rfm
+#getting the m first by finding the total amount spent by that customer
+tempm <- group_by(t, CustomerID) %>% summarise(Customertotal = sum(TotalSum))
+
+library(plyr)
+m <- quantcut(tempm$Customertotal, 5)
+levelm <- levels(m)
+m <- mapvalues(m,  from = levelm, to = c(1,2,3,4,5))
+
+#getting the f
+t$CustomerID <- as.factor(t$CustomerID)
+detach("package:plyr", unload=TRUE) 
+library(dplyr)
+temp <- group_by(t, CustomerID) %>% summarise(count = n())
+
+library(plyr)
+f <- quantcut(temp$count, 5)
+levelf <- levels(f)
+f<- mapvalues(f,  from = levelf, to = c(1,2,3,4,5))
+
+detach("package:plyr", unload=TRUE) 
+library(dplyr)
+
+#getting the r
+
+rf <-data.frame(CID = unique(t$CustomerID), Recency = numeric(length(rf$CID)))
+
+nowvalue <- as.numeric(as.Date("2018-09-01"))
+
+Datevalue = nowvalue - as.numeric(as.Date(as.character(t$Date), "%Y-%m-%d")) 
+
+library(tidyverse)
+tempr <- add_column(t, Datevalue)
+
+tempr <- group_by(tempr, CustomerID) %>% summarise(r = min(Datevalue))
+library(plyr)
+r <- quantcut(tempr$r, 5)
+levelr<- levels(r)
+r<- mapvalues(r,  from = levelr, to = c(5,4,3,2,1))
+detach("package:plyr", unload=TRUE) 
+
+#Getting the RFM values
+
+
+rfm <- data.frame(CID = tempr$CustomerID, r = r, f = f, m =m, stringsAsFactors=FALSE)
+rfm <- add_column(rfm,RFM = paste(rfm$r, rfm$f,rfm$m, sep = ""))
+
+
+
+
+
+
+
+
+
+
