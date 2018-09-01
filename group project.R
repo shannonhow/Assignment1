@@ -100,3 +100,26 @@ customers$amount <- map_quantiles(customer_retail_data$total_amount)
 #The RFM score is then a concatenation of the above three scores. Here is its calculation:
 customers$rfm <- (customers$recency*100 + customers$frequency*10 + customers$amount)
 head(customers)
+
+
+
+
+
+
+
+#Getting the data with (CID, Date, InvoiceNo and TotalSumofinvoice)
+
+library(dplyr)
+library(gtools)
+library(plyr)
+
+t <- group_by(new_retail_data, InvoiceNo, Date, CustomerID ) %>% summarise(TotalSum = sum(TotalSpent))
+
+#Getting the rfm
+#Getting the m first 
+m <- quantcut(t$TotalSum, 5)
+levelm <- levels(m)
+mapvalues(m,  from = levelm, to = c(1,2,3,4,5))
+
+
+
