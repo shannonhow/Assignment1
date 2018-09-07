@@ -140,56 +140,198 @@ rfm_data_3_RF <- retail_data_wo_cancelled %>% filter(Date >= as.Date("2011-07-01
 #####################################
 
 
+##################### RFM1:
+
+
 library(dplyr)
 library(gtools)
 
-#total spent for each invoice
 
-t <- group_by(new_retail_data, InvoiceNo, Date, CustomerID ) %>% summarise(TotalSum = sum(TotalSpent))
-t<- t[order(t$CustomerID),]
+tm1 <- rfm_data_1_M%>%select(InvoiceNo, CustomerID, Date, TotalSpent)
+tm1 <- tm1[order(tm1$CustomerID),]
 
 #getting the rfm
 #getting the m first by finding the total amount spent by that customer
-tempm <- group_by(t, CustomerID) %>% summarise(Customertotal = sum(TotalSum))
+tempm1 <- group_by(tm1, CustomerID) %>% summarise(Customertotal = sum(TotalSpent))
 
 library(plyr)
-m <- quantcut(tempm$Customertotal, 5)
-levelm <- levels(m)
-m <- mapvalues(m,  from = levelm, to = c(1,2,3,4,5))
+tempm1$m1 <- quantcut(tempm1$Customertotal, 5)
+levelm1 <- levels(tempm1$m1)
+tempm1$m1 <- mapvalues(tempm1$m1,  from = levelm1, to = c(1,2,3,4,5))
+
 
 #getting the f
-t$CustomerID <- as.factor(t$CustomerID)
+trf1 <- rfm_data_1_RF%>%select(InvoiceNo, CustomerID, Date, TotalSpent)
+trf1 <- trf1[order(trf1$CustomerID),]
+
+trf1$CustomerID <- as.factor(trf1$CustomerID)
 detach("package:plyr", unload=TRUE) 
 library(dplyr)
-temp <- group_by(t, CustomerID) %>% summarise(count = n())
+temprf1 <- group_by(trf1, CustomerID) %>% summarise(count = n())
 
 library(plyr)
-f <- quantcut(temp$count, 5)
-levelf <- levels(f)
-f<- mapvalues(f,  from = levelf, to = c(1,2,3,4,5))
+temprf1$f1 <- quantcut(temprf1$count, 5)
+levelf1 <- levels(temprf1$f1)
+temprf1$f1 <- mapvalues(temprf1$f1,  from = levelf1, to = c(1,2,3,4,5))
 
 detach("package:plyr", unload=TRUE) 
 library(dplyr)
 
 #getting the r
 
-rf <-data.frame(CID = unique(t$CustomerID), Recency = numeric(length(rf$CID)))
 
 nowvalue <- as.numeric(as.Date("2018-09-01"))
 
-Datevalue = nowvalue - as.numeric(as.Date(as.character(t$Date), "%Y-%m-%d")) 
+Datevalue = nowvalue - as.numeric(as.Date(as.character(trf1$Date), "%Y-%m-%d")) 
 
 library(tidyverse)
-tempr <- add_column(t, Datevalue)
+tempr1 <- add_column(trf1, Datevalue)
 
-tempr <- group_by(tempr, CustomerID) %>% summarise(r = min(Datevalue))
+tempr1 <- group_by(tempr1, CustomerID) %>% summarise(r1 = min(Datevalue))
+ 
 library(plyr)
-r <- quantcut(tempr$r, 5)
-levelr<- levels(r)
-r<- mapvalues(r,  from = levelr, to = c(5,4,3,2,1))
+tempr1$r1 <- quantcut(tempr1$r1, 5)
+levelr1 <- levels(tempr1$r1)
+tempr1$r1 <- mapvalues(tempr1$r1,  from = levelr1, to = c(5,4,3,2,1))
 detach("package:plyr", unload=TRUE) 
 
+
 #Getting the RFM values
-rfm <- data.frame(CID = tempr$CustomerID, r = r, f = f, m =m, stringsAsFactors=FALSE)
-rfm <- add_column(rfm,RFM = paste(rfm$r, rfm$f,rfm$m, sep = ""))
+rfm1 <- merge(tempr1, temprf1, by = "CustomerID")
+rfm1 <- merge(rfm1, tempm1, by = "CustomerID")
+rfm1 <- add_column(rfm1, rfm1 = paste(rfm1$r1, rfm1$f1,rfm1$m1, sep = ""))
+
+
+##################### RFM 2:
+
+
+library(dplyr)
+library(gtools)
+
+
+tm2 <- rfm_data_2_M%>%select(InvoiceNo, CustomerID, Date, TotalSpent)
+tm2 <- tm2[order(tm2$CustomerID),]
+
+#getting the rfm
+#getting the m first by finding the total amount spent by that customer
+tempm2 <- group_by(tm2, CustomerID) %>% summarise(Customertotal = sum(TotalSpent))
+
+library(plyr)
+tempm2$m2 <- quantcut(tempm2$Customertotal, 5)
+levelm2 <- levels(tempm2$m2)
+tempm2$m2 <- mapvalues(tempm2$m2,  from = levelm2, to = c(1,2,3,4,5))
+
+
+#getting the f
+trf2 <- rfm_data_2_RF%>%select(InvoiceNo, CustomerID, Date, TotalSpent)
+trf2 <- trf2[order(trf2$CustomerID),]
+
+trf2$CustomerID <- as.factor(trf2$CustomerID)
+detach("package:plyr", unload=TRUE) 
+library(dplyr)
+temprf2 <- group_by(trf2, CustomerID) %>% summarise(count = n())
+
+library(plyr)
+temprf2$f2 <- quantcut(temprf2$count, 5)
+levelf2 <- levels(temprf2$f2)
+temprf2$f2 <- mapvalues(temprf2$f2,  from = levelf2, to = c(1,2,3,4,5))
+
+detach("package:plyr", unload=TRUE) 
+library(dplyr)
+
+#getting the r
+
+
+nowvalue <- as.numeric(as.Date("2018-09-01"))
+
+Datevalue = nowvalue - as.numeric(as.Date(as.character(trf2$Date), "%Y-%m-%d")) 
+
+library(tidyverse)
+tempr2 <- add_column(trf2, Datevalue)
+
+tempr2 <- group_by(tempr2, CustomerID) %>% summarise(r2 = min(Datevalue))
+
+library(plyr)
+tempr2$r2 <- quantcut(tempr2$r2, 5)
+levelr2 <- levels(tempr2$r2)
+tempr2$r2 <- mapvalues(tempr2$r2,  from = levelr2, to = c(5,4,3,2,1))
+detach("package:plyr", unload=TRUE) 
+
+
+#Getting the RFM values
+rfm2 <- merge(tempr2, temprf2, by = "CustomerID")
+rfm2 <- merge(rfm2, tempm2, by = "CustomerID")
+rfm2 <- add_column(rfm2, rfm2 = paste(rfm2$r2, rfm2$f2,rfm2$m2, sep = ""))
+
+
+##################### RFM3:
+
+
+library(dplyr)
+library(gtools)
+
+
+tm3 <- rfm_data_3_M%>%select(InvoiceNo, CustomerID, Date, TotalSpent)
+tm3 <- tm3[order(tm3$CustomerID),]
+
+#getting the rfm
+#getting the m first by finding the total amount spent by that customer
+tempm3 <- group_by(tm3, CustomerID) %>% summarise(Customertotal = sum(TotalSpent))
+
+library(plyr)
+tempm3$m3 <- quantcut(tempm3$Customertotal, 5)
+levelm3 <- levels(tempm3$m3)
+tempm3$m3 <- mapvalues(tempm3$m3,  from = levelm3, to = c(1,2,3,4,5))
+
+
+#getting the f
+trf3 <- rfm_data_3_RF%>%select(InvoiceNo, CustomerID, Date, TotalSpent)
+trf3 <- trf3[order(trf3$CustomerID),]
+
+trf3$CustomerID <- as.factor(trf3$CustomerID)
+detach("package:plyr", unload=TRUE) 
+library(dplyr)
+temprf3 <- group_by(trf3, CustomerID) %>% summarise(count = n())
+
+library(plyr)
+temprf3$f3 <- quantcut(temprf3$count, 5)
+levelf3 <- levels(temprf3$f3)
+temprf3$f3 <- mapvalues(temprf3$f3,  from = levelf3, to = c(1,2,3,4,5))
+
+detach("package:plyr", unload=TRUE) 
+library(dplyr)
+
+#getting the r
+
+
+nowvalue <- as.numeric(as.Date("2018-09-01"))
+
+Datevalue = nowvalue - as.numeric(as.Date(as.character(trf3$Date), "%Y-%m-%d")) 
+
+library(tidyverse)
+tempr3 <- add_column(trf3, Datevalue)
+
+tempr3 <- group_by(tempr3, CustomerID) %>% summarise(r3 = min(Datevalue))
+
+library(plyr)
+tempr3$r3 <- quantcut(tempr3$r3, 5)
+levelr3 <- levels(tempr3$r3)
+tempr3$r3 <- mapvalues(tempr3$r3,  from = levelr3, to = c(5,4,3,2,1))
+detach("package:plyr", unload=TRUE) 
+
+
+#Getting the RFM values
+rfm3 <- merge(tempr3, temprf3, by = "CustomerID")
+rfm3 <- merge(rfm3, tempm3, by = "CustomerID")
+rfm3 <- add_column(rfm3, rfm3 = paste(rfm3$r3, rfm3$f3,rfm3$m3, sep = ""))
+
+#All the RFM values 
+
+all_rfm <- merge(rfm1, rfm2, by = "CustomerID", all.x = TRUE)
+all_rfm <- merge(all_rfm, rfm3, by = "CustomerID", all.x = TRUE)
+all_rfm <- all_rfm[,c(1,7,13,19)]
+
+
+
+
 
